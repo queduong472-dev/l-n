@@ -2,111 +2,153 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Hệ Thống Quản Lý Cửa Hàng - BTLL</title>
+    <title>Hệ Thống Quản Lý Cửa Hàng - BTLL Hoàn Chỉnh</title>
     <style>
         :root { --primary: #2c3e50; --accent: #3498db; --success: #27ae60; --danger: #e74c3c; }
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; display: flex; background: #f4f7f6; height: 100vh; }
         .sidebar { width: 250px; background: var(--primary); color: white; display: flex; flex-direction: column; }
         .sidebar h2 { padding: 20px; text-align: center; background: #1a252f; margin: 0; font-size: 1.1em; }
-        .nav-item { padding: 15px 25px; cursor: pointer; border-left: 5px solid transparent; }
-        .nav-item.active { background: #34495e; border-left: 5px solid var(--accent); }
+        .nav-item { padding: 15px 25px; cursor: pointer; border-left: 5px solid transparent; transition: 0.3s; }
+        .nav-item:hover, .nav-item.active { background: #34495e; border-left: 5px solid var(--accent); }
         .content { flex: 1; padding: 30px; overflow-y: auto; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         
-        /* Form nhập liệu */
-        .toolbar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
-        input { padding: 10px; border: 1px solid #ddd; border-radius: 5px; flex: 1; min-width: 120px; }
+        /* Toolbar & Inputs */
+        .toolbar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: #f9f9f9; padding: 15px; border-radius: 8px; }
+        input, select { padding: 10px; border: 1px solid #ddd; border-radius: 5px; flex: 1; min-width: 140px; }
         .btn { padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; }
         .btn-add { background: var(--success); }
         .btn-del { background: var(--danger); padding: 5px 10px; font-size: 12px; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th { background: #f8f9fa; color: var(--primary); padding: 15px; text-align: left; border-bottom: 2px solid #dee2e6; }
-        td { padding: 12px 15px; border-bottom: 1px solid #eee; }
+        td { padding: 12px 15px; border-bottom: 1px solid #eee; font-size: 14px; }
     </style>
 </head>
 <body>
 
 <div class="sidebar">
     <h2>QUẢN LÝ CỬA HÀNG 👔</h2>
-    <div class="nav-item active">📦 Sản Phẩm</div>
+    <div class="nav-item active" id="btn-sp" onclick="switchTab('sp')">📦 Sản Phẩm</div>
+    <div class="nav-item" id="btn-nv" onclick="switchTab('nv')">👥 Nhân Viên</div>
+    <div class="nav-item" id="btn-kh" onclick="switchTab('kh')">⭐ Khách Hàng</div>
+    <div class="nav-item" id="btn-hd" onclick="switchTab('hd')">🧾 Hóa Đơn</div>
 </div>
 
 <div class="content">
     <div class="card">
-        <h1>Quản lý Sản Phẩm</h1>
+        <h1 id="tab-title">Quản lý Sản Phẩm</h1>
         
-        <div class="toolbar">
-            <input type="text" id="in-id" placeholder="Mã (VD: SP03)">
-            <input type="text" id="in-name" placeholder="Tên sản phẩm">
-            <input type="text" id="in-type" placeholder="Loại (Áo/Quần)">
-            <input type="text" id="in-price" placeholder="Giá bán">
-            <input type="number" id="in-stock" placeholder="Kho">
-            <button class="btn btn-add" onclick="addNewProduct()">➕ Thêm Mới</button>
-        </div>
+        <div class="toolbar" id="input-fields">
+            </div>
 
         <table>
-            <thead>
-                <tr>
-                    <th>Mã</th>
-                    <th>Tên SP</th>
-                    <th>Loại</th>
-                    <th>Giá Bán</th>
-                    <th>Kho</th>
-                    <th>Thao tác</th>
-                </tr>
-            </thead>
-            <tbody id="product-list"></tbody>
+            <thead id="table-head"></thead>
+            <tbody id="table-body"></tbody>
         </table>
     </div>
 </div>
 
 <script>
-    // Dữ liệu mẫu từ SQL của bạn [cite: 14, 214]
-    let products = [
-        { id: "SP01", name: "Áo Sơ Mi Trắng", type: "Áo", price: "250,000", stock: 10 },
-        { id: "SP02", name: "Quần Jean Nam Xanh", type: "Quần", price: "550,000", stock: 67 }
-    ];
+    // Dữ liệu ban đầu (lấy từ SQL của bạn)
+    let data = {
+        sp: [
+            { id: "SP01", name: "Áo Sơ Mi Trắng", type: "Áo", price: "250,000", stock: 10 },
+            { id: "SP02", name: "Quần Jean Nam Xanh", type: "Quần", price: "550,000", stock: 67 }
+        ],
+        nv: [
+            { id: "NV01", name: "Nguyễn Văn Anh", role: "Quản lý", phone: "0901234567" },
+            { id: "NV02", name: "Nguyễn Phương Anh", role: "Bán hàng", phone: "0912345678" }
+        ],
+        kh: [
+            { id: "KH01", name: "Nguyễn Thị Mai", phone: "0321456789", addr: "Hà Nội" }
+        ],
+        hd: [
+            { id: "HD01", date: "2023-09-01", total: "400,000", staff: "NV02" }
+        ]
+    };
+
+    let currentTab = 'sp';
+
+    function switchTab(tab) {
+        currentTab = tab;
+        // Cập nhật UI Sidebar
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        document.getElementById('btn-' + tab).classList.add('active');
+        
+        const titles = {sp: "Sản Phẩm", nv: "Nhân Viên", kh: "Khách Hàng", hd: "Hóa Đơn"};
+        document.getElementById('tab-title').innerText = "Quản lý " + titles[tab];
+
+        renderInputs();
+        renderTable();
+    }
+
+    function renderInputs() {
+        const container = document.getElementById('input-fields');
+        if (currentTab === 'sp') {
+            container.innerHTML = `
+                <input id="i1" placeholder="Mã SP"> <input id="i2" placeholder="Tên SP">
+                <input id="i3" placeholder="Loại"> <input id="i4" placeholder="Giá">
+                <input id="i5" type="number" placeholder="Kho">
+                <button class="btn btn-add" onclick="addItem()">➕ Thêm SP</button>`;
+        } else if (currentTab === 'nv') {
+            container.innerHTML = `
+                <input id="i1" placeholder="Mã NV"> <input id="i2" placeholder="Tên NV">
+                <input id="i3" placeholder="Chức vụ"> <input id="i4" placeholder="SĐT">
+                <button class="btn btn-add" onclick="addItem()">➕ Thêm NV</button>`;
+        } else if (currentTab === 'kh') {
+            container.innerHTML = `
+                <input id="i1" placeholder="Mã KH"> <input id="i2" placeholder="Tên KH">
+                <input id="i3" placeholder="SĐT"> <input id="i4" placeholder="Địa chỉ">
+                <button class="btn btn-add" onclick="addItem()">➕ Thêm KH</button>`;
+        } else {
+            container.innerHTML = `<p>Tab Hóa đơn dùng để xem lịch sử giao dịch.</p>`;
+        }
+    }
 
     function renderTable() {
-        const body = document.getElementById('product-list');
-        body.innerHTML = products.map((item, index) => `
+        const head = document.getElementById('table-head');
+        const body = document.getElementById('table-body');
+        
+        let h = (currentTab==='sp') ? ["Mã", "Tên SP", "Loại", "Giá", "Kho", "Lệnh"] :
+                (currentTab==='nv') ? ["Mã NV", "Tên NV", "Chức vụ", "SĐT", "Lệnh"] :
+                (currentTab==='kh') ? ["Mã KH", "Tên KH", "SĐT", "Địa chỉ", "Lệnh"] :
+                                      ["Mã HD", "Ngày", "Tổng", "NV Lập", "Lệnh"];
+
+        head.innerHTML = `<tr>${h.map(title => `<th>${title}</th>`).join('')}</tr>`;
+        
+        body.innerHTML = data[currentTab].map((item, index) => `
             <tr>
-                <td>${item.id}</td>
-                <td>${item.name}</td>
-                <td>${item.type}</td>
-                <td>${item.price}</td>
-                <td>${item.stock}</td>
-                <td><button class="btn btn-del" onclick="deleteProduct(${index})">Xóa</button></td>
+                ${Object.values(item).map(v => `<td>${v}</td>`).join('')}
+                <td><button class="btn btn-del" onclick="deleteItem(${index})">Xóa</button></td>
             </tr>
         `).join('');
     }
 
-    function addNewProduct() {
-        const id = document.getElementById('in-id').value;
-        const name = document.getElementById('in-name').value;
-        const type = document.getElementById('in-type').value;
-        const price = document.getElementById('in-price').value;
-        const stock = document.getElementById('in-stock').value;
-
-        if (id && name && price) {
-            products.push({ id, name, type, price, stock });
-            renderTable(); // Vẽ lại bảng
-            // Xóa sạch ô nhập
-            document.querySelectorAll('.toolbar input').forEach(i => i.value = "");
-        } else {
-            alert("Vui lòng nhập Mã, Tên và Giá!");
+    function addItem() {
+        const v1 = document.getElementById('i1').value;
+        const v2 = document.getElementById('i2').value;
+        const v3 = document.getElementById('i3').value;
+        const v4 = document.getElementById('i4').value;
+        
+        if (v1 && v2) {
+            let newItem = (currentTab==='sp') ? {id: v1, name: v2, type: v3, price: v4, stock: document.getElementById('i5').value} :
+                          (currentTab==='nv') ? {id: v1, name: v2, role: v3, phone: v4} :
+                                                {id: v1, name: v2, phone: v3, addr: v4};
+            data[currentTab].push(newItem);
+            renderTable();
+            document.querySelectorAll('input').forEach(i => i.value = "");
         }
     }
 
-    function deleteProduct(index) {
-        if (confirm("Xóa sản phẩm này?")) {
-            products.splice(index, 1);
+    function deleteItem(index) {
+        if(confirm("Xác nhận xóa?")) {
+            data[currentTab].splice(index, 1);
             renderTable();
         }
     }
 
-    renderTable(); // Khởi tạo
+    switchTab('sp'); // Chạy mặc định
 </script>
 </body>
 </html>
