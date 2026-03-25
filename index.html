@@ -34,7 +34,7 @@
         .btn-export { background: #607d8b; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-th { background: #f8f9fa; color: var(--primary); padding: 15px; text-align: left; border-bottom: 2px solid #dee2e6; }
+        th { background: #f8f9fa; color: var(--primary); padding: 15px; text-align: left; border-bottom: 2px solid #dee2e6; }
         td { padding: 12px 15px; border-bottom: 1px solid #eee; font-size: 14px; }
     </style>
 </head>
@@ -94,7 +94,7 @@ th { background: #f8f9fa; color: var(--primary); padding: 15px; text-align: left
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         document.getElementById('btn-' + tab).classList.add('active');
         document.getElementById('tab-title').innerText = "Quản lý " + (tab==='sp'?'Sản Phẩm':tab==='nv'?'Nhân Viên':tab==='kh'?'Khách Hàng':'Hóa Đơn');
-renderForm(); renderTable(); updateDashboard();
+        renderForm(); renderTable(); updateDashboard();
     }
 
     function renderForm(editData = null) {
@@ -143,7 +143,7 @@ renderForm(); renderTable(); updateDashboard();
     }
 
     function updateDashboard() {
-// TÍNH DOANH THU ĐỘNG TỪ BẢNG HÓA ĐƠN 
+        // TÍNH DOANH THU ĐỘNG TỪ BẢNG HÓA ĐƠN 
         const revenue = appData.hd.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
         document.getElementById('st-rev').innerText = revenue.toLocaleString() + "đ";
         document.getElementById('st-count').innerText = appData.sp.length;
