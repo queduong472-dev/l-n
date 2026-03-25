@@ -1,37 +1,110 @@
-// Bổ sung dữ liệu cấu hình từ SQL của bạn
-let products = [
-    { id: "SP01", name: "Áo Sơ Mi Trắng", stock: 0, price: 250000 }, // SP01 đang hết hàng theo SQL [cite: 214]
-    { id: "SP02", name: "Quần Jean Nam Xanh", stock: 67, price: 550000 }
-];
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Hệ Thống Quản Lý Cửa Hàng - BTLL</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; margin: 0; display: flex; background: #f0f2f5; height: 100vh; }
+        .sidebar { width: 250px; background: #2c3e50; color: white; padding: 20px; }
+        .sidebar h2 { font-size: 1.2em; border-bottom: 1px solid #555; padding-bottom: 10px; }
+        .menu-item { padding: 12px; cursor: pointer; border-radius: 5px; margin-bottom: 5px; }
+        .menu-item:hover, .active { background: #3498db; }
+        .content { flex: 1; padding: 30px; overflow-y: auto; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background: #3498db; color: white; padding: 12px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #ddd; }
+        .form-group { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
+        input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .btn-add { background: #27ae60; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; }
+    </style>
+</head>
+<body>
 
-let invoices = [
-    { id: "HD01", total: 400000, date: "2023-09-01" },
-    { id: "HD02", total: 550000, date: "2023-09-01" }
-];
+<div class="sidebar">
+    <h2>QUẢN LÝ CỬA HÀNG</h2>
+    <div class="menu-item active" onclick="showTab('sp')">Sản Phẩm</div>
+    <div class="menu-item" onclick="showTab('nv')">Nhân Viên</div>
+    <div class="menu-item" onclick="showTab('kh')">Khách Hàng</div>
+</div>
 
-// 1. Hàm tính Tổng doanh thu (Chuyên sâu cho phần Kết luận báo cáo)
-function calculateTotalRevenue() {
-    return invoices.reduce((sum, inv) => sum + inv.total, 0);
-}
+<div class="content">
+    <div class="card">
+        <h2 id="title">Danh Sách Sản Phẩm</h2>
+        <div class="form-group" id="formInput">
+            </div>
+        <button class="btn-add" onclick="addData()">+ Thêm Mới</button>
+        
+        <table id="mainTable">
+            <thead id="thead"></thead>
+            <tbody id="tbody"></tbody>
+        </table>
+    </div>
+</div>
 
-// 2. Ràng buộc: Kiểm tra trước khi bán (Logic nghiệp vụ)
-function validateSale(productId, quantity) {
-    const product = products.find(p => p.id === productId);
-    if (product.stock < quantity) {
-        alert(`Không đủ hàng! ${product.name} chỉ còn ${product.stock} sản phẩm.`); // Theo quy tắc ràng buộc [cite: 18]
-        return false;
+<script>
+    // Dữ liệu lấy trực tiếp từ file SQL của bạn [cite: 211, 212, 214]
+    let data = {
+        sp: [
+            { id: "SP01", name: "Áo Sơ Mi Trắng", type: "Áo", price: "250,000", origin: "Việt Nam" },
+            { id: "SP02", name: "Quần Jean Nam Xanh", type: "Quần", price: "550,000", origin: "Việt Nam" }
+        ],
+        nv: [
+            { id: "NV01", name: "Nguyễn Văn Anh", role: "Quản lý", phone: "0901234567" },
+            { id: "NV02", name: "Nguyễn Phương Anh", role: "Bán hàng", phone: "0912345678" }
+        ],
+        kh: [
+            { id: "KH01", name: "Nguyễn Thị Mai", phone: "0321456789", city: "Hà Nội" }
+        ]
+    };
+
+    let currentTab = 'sp';
+
+    function showTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+        event.target.classList.add('active');
+        renderHeader();
+        renderTable();
     }
-    return true;
-}
 
-// 3. Tự động tính Thành tiền (Dựa trên CHITIET_HOADON) [cite: 48, 194]
-function updateLineTotal(price, quantity) {
-    return price * quantity;
-}
+    function renderHeader() {
+        const thead = document.getElementById('thead');
+        const form = document.getElementById('formInput');
+        if (currentTab === 'sp') {
+            thead.innerHTML = `<tr><th>Mã SP</th><th>Tên SP</th><th>Loại</th><th>Giá Bán</th><th>Xuất Xứ</th></tr>`;
+            form.innerHTML = `<input id="i1" placeholder="Mã SP"> <input id="i2" placeholder="Tên SP"> <input id="i3" placeholder="Giá">`;
+        } else if (currentTab === 'nv') {
+            thead.innerHTML = `<tr><th>Mã NV</th><th>Tên NV</th><th>Chức Vụ</th><th>SĐT</th></tr>`;
+            form.innerHTML = `<input id="i1" placeholder="Mã NV"> <input id="i2" placeholder="Tên NV">`;
+        } else {
+            thead.innerHTML = `<tr><th>Mã KH</th><th>Tên KH</th><th>SĐT</th><th>Địa Chỉ</th></tr>`;
+            form.innerHTML = `<input id="i1" placeholder="Mã KH"> <input id="i2" placeholder="Tên KH">`;
+        }
+    }
 
-// Hàm hiển thị Dashboard Thống kê
-function renderDashboard() {
-    const total = calculateTotalRevenue();
-    console.log("Tổng doanh thu hệ thống:", total.toLocaleString('vi-VN'), "VNĐ");
-    // Bạn có thể dùng dữ liệu này để vẽ biểu đồ bằng thư viện Chart.js
-}
+    function renderTable() {
+        const tbody = document.getElementById('tbody');
+        tbody.innerHTML = "";
+        data[currentTab].forEach(item => {
+            let row = "<tr>";
+            Object.values(item).forEach(val => row += `<td>${val}</td>`);
+            row += "</tr>";
+            tbody.innerHTML += row;
+        });
+    }
+
+    function addData() {
+        const val1 = document.getElementById('i1').value;
+        const val2 = document.getElementById('i2').value;
+        if(val1 && val2) {
+            // Logic thêm nhanh để demo
+            data[currentTab].push({ id: val1, name: val2, extra1: "...", extra2: "..." });
+            renderTable();
+        }
+    }
+
+    showTab('sp'); // Khởi tạo
+</script>
+</body>
+</html>
