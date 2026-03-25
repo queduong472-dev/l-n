@@ -6,29 +6,41 @@
     <style>
         :root { --primary: #2c3e50; --accent: #3498db; --success: #27ae60; --danger: #e74c3c; }
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; display: flex; background: #f4f7f6; height: 100vh; }
-        .sidebar { width: 250px; background: var(--primary); color: white; display: flex; flex-direction: column; }
-        .sidebar h2 { padding: 20px; text-align: center; background: #1a252f; margin: 0; font-size: 1.1em; }
-        .nav-item { padding: 15px 25px; cursor: pointer; border-left: 5px solid transparent; transition: 0.3s; }
+        
+        /* Sidebar */
+        .sidebar { width: 260px; background: var(--primary); color: white; display: flex; flex-direction: column; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
+        .sidebar h2 { padding: 25px; text-align: center; background: #1a252f; margin: 0; font-size: 1.2em; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-item { padding: 18px 25px; cursor: pointer; transition: 0.3s; border-left: 5px solid transparent; display: flex; align-items: center; gap: 10px; }
         .nav-item:hover, .nav-item.active { background: #34495e; border-left: 5px solid var(--accent); }
+
+        /* Main Content */
         .content { flex: 1; padding: 30px; overflow-y: auto; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h1 { margin-top: 0; color: #2c3e50; font-size: 1.5em; border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin-bottom: 20px; }
+
+        /* Form Nhập liệu */
+        .form-container { background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #eee; }
+        .input-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        input, select { padding: 10px; border: 1px solid #ddd; border-radius: 5px; outline: none; transition: 0.2s; }
+        input:focus { border-color: var(--accent); }
         
-        /* Toolbar & Inputs */
-        .toolbar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: #f9f9f9; padding: 15px; border-radius: 8px; }
-        input, select { padding: 10px; border: 1px solid #ddd; border-radius: 5px; flex: 1; min-width: 140px; }
-        .btn { padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; }
+        /* Nút bấm */
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; }
         .btn-add { background: var(--success); }
         .btn-del { background: var(--danger); padding: 5px 10px; font-size: 12px; }
+        .btn:hover { opacity: 0.8; transform: translateY(-1px); }
 
+        /* Bảng */
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { background: #f8f9fa; color: var(--primary); padding: 15px; text-align: left; border-bottom: 2px solid #dee2e6; }
-        td { padding: 12px 15px; border-bottom: 1px solid #eee; font-size: 14px; }
+        th { background: #f8f9fa; color: var(--primary); padding: 15px; text-align: left; border-bottom: 2px solid #dee2e6; font-size: 14px; }
+        td { padding: 12px 15px; border-bottom: 1px solid #eee; font-size: 14px; color: #555; }
+        tr:hover { background: #fdfdfd; }
     </style>
 </head>
 <body>
 
 <div class="sidebar">
-    <h2>QUẢN LÝ CỬA HÀNG 👔</h2>
+    <h2>Quản Lý Cửa Hàng 👔</h2>
     <div class="nav-item active" id="btn-sp" onclick="switchTab('sp')">📦 Sản Phẩm</div>
     <div class="nav-item" id="btn-nv" onclick="switchTab('nv')">👥 Nhân Viên</div>
     <div class="nav-item" id="btn-kh" onclick="switchTab('kh')">⭐ Khách Hàng</div>
@@ -39,10 +51,13 @@
     <div class="card">
         <h1 id="tab-title">Quản lý Sản Phẩm</h1>
         
-        <div class="toolbar" id="input-fields">
-            </div>
+        <div class="form-container" id="dynamic-form">
+            <div class="input-grid" id="input-fields">
+                </div>
+            <button class="btn btn-add" id="main-add-btn" onclick="handleAddItem()">➕ Thêm Dữ Liệu Mới</button>
+        </div>
 
-        <table>
+        <table id="main-table">
             <thead id="table-head"></thead>
             <tbody id="table-body"></tbody>
         </table>
@@ -50,21 +65,21 @@
 </div>
 
 <script>
-    // Dữ liệu ban đầu (lấy từ SQL của bạn)
-    let data = {
+    // 1. Khởi tạo dữ liệu từ file SQL của bạn [cite: 210, 211, 212, 214, 215]
+    let appData = {
         sp: [
-            { id: "SP01", name: "Áo Sơ Mi Trắng", type: "Áo", price: "250,000", stock: 10 },
-            { id: "SP02", name: "Quần Jean Nam Xanh", type: "Quần", price: "550,000", stock: 67 }
+            { id: "SP01", name: "Áo Sơ Mi Trắng", type: "Áo", buy: 150000, sell: 250000, stock: 0 },
+            { id: "SP02", name: "Quần Jean Nam Xanh", type: "Quần", buy: 300000, sell: 550000, stock: 67 }
         ],
         nv: [
-            { id: "NV01", name: "Nguyễn Văn Anh", role: "Quản lý", phone: "0901234567" },
-            { id: "NV02", name: "Nguyễn Phương Anh", role: "Bán hàng", phone: "0912345678" }
+            { id: "NV01", name: "Nguyễn Văn Anh", role: "Quản lý", phone: "0901234567", mail: "annv@gmail.com" },
+            { id: "NV02", name: "Nguyễn Phương Anh", role: "Bán hàng", phone: "0912345678", mail: "anhnp@gmail.com" }
         ],
         kh: [
-            { id: "KH01", name: "Nguyễn Thị Mai", phone: "0321456789", addr: "Hà Nội" }
+            { id: "KH01", name: "Nguyễn Thị Mai", phone: "0321456789", addr: "Hà Nội", gender: "Nữ" }
         ],
         hd: [
-            { id: "HD01", date: "2023-09-01", total: "400,000", staff: "NV02" }
+            { id: "HD01", date: "2023-09-01", total: 400000, staff: "NV02", customer: "KH01" }
         ]
     };
 
@@ -72,37 +87,48 @@
 
     function switchTab(tab) {
         currentTab = tab;
-        // Cập nhật UI Sidebar
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         document.getElementById('btn-' + tab).classList.add('active');
         
         const titles = {sp: "Sản Phẩm", nv: "Nhân Viên", kh: "Khách Hàng", hd: "Hóa Đơn"};
         document.getElementById('tab-title').innerText = "Quản lý " + titles[tab];
 
-        renderInputs();
+        renderForm();
         renderTable();
     }
 
-    function renderInputs() {
-        const container = document.getElementById('input-fields');
+    function renderForm() {
+        const grid = document.getElementById('input-fields');
+        const addBtn = document.getElementById('main-add-btn');
+        
         if (currentTab === 'sp') {
-            container.innerHTML = `
-                <input id="i1" placeholder="Mã SP"> <input id="i2" placeholder="Tên SP">
-                <input id="i3" placeholder="Loại"> <input id="i4" placeholder="Giá">
-                <input id="i5" type="number" placeholder="Kho">
-                <button class="btn btn-add" onclick="addItem()">➕ Thêm SP</button>`;
+            grid.innerHTML = `
+                <input id="f1" placeholder="Mã SP (SP...)"> <input id="f2" placeholder="Tên Sản Phẩm">
+                <input id="f3" placeholder="Loại"> <input id="f4" type="number" placeholder="Giá Nhập">
+                <input id="f5" type="number" placeholder="Giá Bán"> <input id="f6" type="number" placeholder="Số lượng tồn">
+            `;
+            addBtn.innerText = "➕ Thêm Sản Phẩm";
         } else if (currentTab === 'nv') {
-            container.innerHTML = `
-                <input id="i1" placeholder="Mã NV"> <input id="i2" placeholder="Tên NV">
-                <input id="i3" placeholder="Chức vụ"> <input id="i4" placeholder="SĐT">
-                <button class="btn btn-add" onclick="addItem()">➕ Thêm NV</button>`;
+            grid.innerHTML = `
+                <input id="f1" placeholder="Mã NV (NV...)"> <input id="f2" placeholder="Họ Tên">
+                <input id="f3" placeholder="Chức vụ"> <input id="f4" placeholder="Số điện thoại">
+                <input id="f5" placeholder="Email">
+            `;
+            addBtn.innerText = "➕ Thêm Nhân Viên";
         } else if (currentTab === 'kh') {
-            container.innerHTML = `
-                <input id="i1" placeholder="Mã KH"> <input id="i2" placeholder="Tên KH">
-                <input id="i3" placeholder="SĐT"> <input id="i4" placeholder="Địa chỉ">
-                <button class="btn btn-add" onclick="addItem()">➕ Thêm KH</button>`;
+            grid.innerHTML = `
+                <input id="f1" placeholder="Mã KH (KH...)"> <input id="f2" placeholder="Họ Tên">
+                <input id="f3" placeholder="Số điện thoại"> <input id="f4" placeholder="Địa chỉ">
+                <select id="f5"><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select>
+            `;
+            addBtn.innerText = "➕ Thêm Khách Hàng";
         } else {
-            container.innerHTML = `<p>Tab Hóa đơn dùng để xem lịch sử giao dịch.</p>`;
+            grid.innerHTML = `
+                <input id="f1" placeholder="Mã HĐ"> <input id="f2" type="date">
+                <input id="f3" type="number" placeholder="Tổng tiền"> <input id="f4" placeholder="Mã NV">
+                <input id="f5" placeholder="Mã KH">
+            `;
+            addBtn.innerText = "➕ Tạo Hóa Đơn";
         }
     }
 
@@ -110,45 +136,63 @@
         const head = document.getElementById('table-head');
         const body = document.getElementById('table-body');
         
-        let h = (currentTab==='sp') ? ["Mã", "Tên SP", "Loại", "Giá", "Kho", "Lệnh"] :
-                (currentTab==='nv') ? ["Mã NV", "Tên NV", "Chức vụ", "SĐT", "Lệnh"] :
-                (currentTab==='kh') ? ["Mã KH", "Tên KH", "SĐT", "Địa chỉ", "Lệnh"] :
-                                      ["Mã HD", "Ngày", "Tổng", "NV Lập", "Lệnh"];
+        let h = (currentTab==='sp') ? ["Mã", "Tên SP", "Loại", "Giá Nhập", "Giá Bán", "Tồn", "Thao tác"] :
+                (currentTab==='nv') ? ["Mã NV", "Tên NV", "Chức vụ", "SĐT", "Email", "Thao tác"] :
+                (currentTab==='kh') ? ["Mã KH", "Họ Tên", "SĐT", "Địa chỉ", "Giới tính", "Thao tác"] :
+                                      ["Mã HD", "Ngày tạo", "Thành tiền", "NV Lập", "Khách hàng", "Thao tác"];
 
         head.innerHTML = `<tr>${h.map(title => `<th>${title}</th>`).join('')}</tr>`;
         
-        body.innerHTML = data[currentTab].map((item, index) => `
+        body.innerHTML = appData[currentTab].map((item, index) => `
             <tr>
-                ${Object.values(item).map(v => `<td>${v}</td>`).join('')}
-                <td><button class="btn btn-del" onclick="deleteItem(${index})">Xóa</button></td>
+                ${Object.values(item).map(v => `<td>${typeof v === 'number' ? v.toLocaleString() : v}</td>`).join('')}
+                <td><button class="btn btn-del" onclick="handleDeleteItem(${index})">Xóa</button></td>
             </tr>
         `).join('');
     }
 
-    function addItem() {
-        const v1 = document.getElementById('i1').value;
-        const v2 = document.getElementById('i2').value;
-        const v3 = document.getElementById('i3').value;
-        const v4 = document.getElementById('i4').value;
+    function handleAddItem() {
+        const inputs = [
+            document.getElementById('f1')?.value,
+            document.getElementById('f2')?.value,
+            document.getElementById('f3')?.value,
+            document.getElementById('f4')?.value,
+            document.getElementById('f5')?.value,
+            document.getElementById('f6')?.value
+        ];
+
+        if (!inputs[0] || !inputs[1]) {
+            alert("Vui lòng nhập ít nhất Mã định danh và Tên!");
+            return;
+        }
+
+        let newItem = {};
+        if (currentTab === 'sp') {
+            newItem = { id: inputs[0], name: inputs[1], type: inputs[2], buy: Number(inputs[3]), sell: Number(inputs[4]), stock: Number(inputs[5]) };
+        } else if (currentTab === 'nv') {
+            newItem = { id: inputs[0], name: inputs[1], role: inputs[2], phone: inputs[3], mail: inputs[4] };
+        } else if (currentTab === 'kh') {
+            newItem = { id: inputs[0], name: inputs[1], phone: inputs[2], addr: inputs[3], gender: inputs[4] };
+        } else {
+            newItem = { id: inputs[0], date: inputs[1], total: Number(inputs[2]), staff: inputs[3], customer: inputs[4] };
+        }
+
+        appData[currentTab].push(newItem);
+        renderTable();
         
-        if (v1 && v2) {
-            let newItem = (currentTab==='sp') ? {id: v1, name: v2, type: v3, price: v4, stock: document.getElementById('i5').value} :
-                          (currentTab==='nv') ? {id: v1, name: v2, role: v3, phone: v4} :
-                                                {id: v1, name: v2, phone: v3, addr: v4};
-            data[currentTab].push(newItem);
-            renderTable();
-            document.querySelectorAll('input').forEach(i => i.value = "");
-        }
+        // Reset form
+        document.querySelectorAll('.input-grid input').forEach(i => i.value = "");
     }
 
-    function deleteItem(index) {
-        if(confirm("Xác nhận xóa?")) {
-            data[currentTab].splice(index, 1);
+    function handleDeleteItem(index) {
+        if (confirm("Bạn có chắc chắn muốn xóa bản ghi này?")) {
+            appData[currentTab].splice(index, 1);
             renderTable();
         }
     }
 
-    switchTab('sp'); // Chạy mặc định
+    // Khởi tạo trang lần đầu
+    switchTab('sp');
 </script>
 </body>
 </html>
