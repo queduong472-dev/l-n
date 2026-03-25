@@ -4,21 +4,22 @@
     <meta charset="UTF-8">
     <title>Hệ Thống Quản Lý Cửa Hàng - BTLL</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; background: #f4f7f6; height: 100vh; color: #333; }
-        .sidebar { width: 260px; background: #2c3e50; color: white; display: flex; flex-direction: column; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
+        /* CSS để tạo giao diện chuyên nghiệp giống Admin Dashboard */
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; display: flex; background: #f4f7f6; height: 100vh; }
+        .sidebar { width: 250px; background: #2c3e50; color: white; display: flex; flex-direction: column; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
         .sidebar h2 { padding: 20px; font-size: 1.1em; text-align: center; border-bottom: 1px solid #34495e; margin: 0; background: #1a252f; }
-        .nav-item { padding: 15px 25px; cursor: pointer; transition: 0.3s; border-left: 5px solid transparent; display: flex; align-items: center; }
+        .nav-item { padding: 15px 25px; cursor: pointer; transition: 0.3s; border-left: 5px solid transparent; }
         .nav-item:hover, .nav-item.active { background: #34495e; border-left: 5px solid #3498db; }
         .content { flex: 1; padding: 40px; overflow-y: auto; }
         .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-        h1 { margin-top: 0; color: #2c3e50; font-size: 1.5em; border-bottom: 2px solid #3498db; padding-bottom: 10px; display: inline-block; }
-        table { width: 100%; border-collapse: collapse; margin-top: 25px; }
-        th { background: #3498db; color: white; padding: 15px; text-align: left; font-weight: 600; }
-        td { padding: 12px 15px; border-bottom: 1px solid #eee; font-size: 0.95em; }
+        h1 { margin-top: 0; color: #2c3e50; font-size: 1.5em; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #3498db; color: white; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
         tr:hover { background: #f9f9f9; }
-        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.85em; font-weight: bold; }
-        .in-stock { background: #d4edda; color: #155724; }
-        .out-stock { background: #f8d7da; color: #721c24; }
+        .badge { padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .instock { background: #d4edda; color: #155724; }
+        .outstock { background: #f8d7da; color: #721c24; }
     </style>
 </head>
 <body>
@@ -34,7 +35,7 @@
 <div class="content">
     <div class="card">
         <h1 id="tab-title">Danh Mục Sản Phẩm</h1>
-        <table id="main-table">
+        <table>
             <thead id="table-head"></thead>
             <tbody id="table-body"></tbody>
         </table>
@@ -42,63 +43,51 @@
 </div>
 
 <script>
-    // Dữ liệu thực tế từ file SQL và Báo cáo của bạn [cite: 211, 212, 214, 215]
+    /* Dữ liệu lấy từ file SQL của bạn */
     const db = {
         sp: [
-            { id: "SP01", name: "Áo Sơ Mi Trắng", type: "Áo", buy: "150,000", sell: "250,000", stock: 0 },
-            { id: "SP02", name: "Quần Jean Nam Xanh", type: "Quần", buy: "300,000", sell: "550,000", stock: 67 },
-            { id: "SP03", name: "Áo Thun Basic", type: "Áo", buy: "80,000", sell: "150,000", stock: 69 }
+            { id: "SP01", name: "Áo Sơ Mi Trắng", type: "Áo", price: "250,000", stock: 0 }, // [cite: 214]
+            { id: "SP02", name: "Quần Jean Nam Xanh", type: "Quần", price: "550,000", stock: 67 } // [cite: 214]
         ],
         nv: [
-            { id: "NV01", name: "Nguyễn Văn Anh", role: "Quản lý", gender: "Nam", date: "2022-01-10" },
-            { id: "NV02", name: "Nguyễn Phương Anh", role: "Bán hàng", gender: "Nữ", date: "2022-03-15" }
+            { id: "NV01", name: "Nguyễn Văn Anh", role: "Quản lý", phone: "0901234567" }, // [cite: 211]
+            { id: "NV02", name: "Nguyễn Phương Anh", role: "Bán hàng", phone: "0912345678" } // [cite: 211]
         ],
         kh: [
-            { id: "KH01", name: "Nguyễn Thị Mai", phone: "0321456789", city: "Hà Nội" },
-            { id: "KH02", name: "Trần Văn Nam", phone: "0332567890", city: "Hải Phòng" }
+            { id: "KH01", name: "Nguyễn Thị Mai", phone: "0321456789", city: "Hà Nội" } // [cite: 212]
         ],
         hd: [
-            { id: "HD01", date: "2023-09-01", total: "400,000", staff: "NV02", customer: "KH01" },
-            { id: "HD02", date: "2023-09-01", total: "550,000", staff: "NV03", customer: "KH02" }
+            { id: "HD01", date: "2023-09-01", total: "400,000", staff: "NV02", customer: "KH01" } // [cite: 215]
         ]
     };
 
     function changeTab(tab) {
-        // Cập nhật giao diện menu
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         event.currentTarget.classList.add('active');
-
-        const titleMap = { sp: "Danh Mục Sản Phẩm", nv: "Danh Sách Nhân Viên", kh: "Quản Lý Khách Hàng", hd: "Lịch Sử Hóa Đơn" };
-        document.getElementById('tab-title').innerText = titleMap[tab];
-
+        const titles = { sp: "Danh Mục Sản Phẩm", nv: "Danh Sách Nhân Viên", kh: "Quản Lý Khách Hàng", hd: "Lịch Sử Hóa Đơn" };
+        document.getElementById('tab-title').innerText = titles[tab];
         renderTable(tab);
     }
 
     function renderTable(tab) {
         const head = document.getElementById('table-head');
         const body = document.getElementById('table-body');
-        
         let headers = [];
-        if (tab === 'sp') headers = ["Mã SP", "Tên Sản Phẩm", "Loại", "Giá Nhập", "Giá Bán", "Tồn Kho"];
-        else if (tab === 'nv') headers = ["Mã NV", "Họ Tên", "Chức Vụ", "Giới Tính", "Ngày Vào Làm"];
-        else if (tab === 'kh') headers = ["Mã KH", "Họ Tên", "Số Điện Thoại", "Địa Chỉ"];
-        else headers = ["Mã HĐ", "Ngày Tạo", "Thành Tiền", "NV Lập", "Khách Hàng"];
+        if (tab === 'sp') headers = ["Mã SP", "Tên SP", "Loại", "Giá Bán", "Tồn Kho"];
+        else if (tab === 'nv') headers = ["Mã NV", "Họ Tên", "Chức Vụ", "SĐT"];
+        else if (tab === 'kh') headers = ["Mã KH", "Họ Tên", "SĐT", "Địa Chỉ"];
+        else headers = ["Mã HD", "Ngày Tạo", "Tổng Tiền", "NV Lập", "Khách"];
 
         head.innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
-        
         body.innerHTML = db[tab].map(item => {
             return `<tr>${Object.values(item).map((val, i) => {
-                if (tab === 'sp' && i === 5) { // Cột tồn kho
-                    const statusClass = val > 0 ? 'in-stock' : 'out-stock';
-                    const statusText = val > 0 ? `Còn ${val}` : 'Hết hàng';
-                    return `<td><span class="status-badge ${statusClass}">${statusText}</span></td>`;
+                if (tab === 'sp' && i === 4) { // Cột tồn kho
+                    return `<td><span class="badge ${val > 0 ? 'instock' : 'outstock'}">${val > 0 ? 'Còn hàng' : 'Hết hàng'}</span></td>`;
                 }
                 return `<td>${val}</td>`;
             }).join('')}</tr>`;
         }).join('');
     }
-
-    // Khởi tạo bảng đầu tiên
     renderTable('sp');
 </script>
 </body>
