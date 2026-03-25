@@ -1,116 +1,37 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Quản Lý Kho Quần Áo</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; display: flex; justify-content: center; padding: 50px; }
-        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 800px; }
-        h2 { text-align: center; color: #333; }
-        
-        /* Form nhập liệu */
-        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
-        input, select { padding: 10px; border: 1px solid #ddd; border-radius: 4px; flex: 1; }
-        button#add-btn { background-color: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        button#add-btn:hover { background-color: #218838; }
+// Bổ sung dữ liệu cấu hình từ SQL của bạn
+let products = [
+    { id: "SP01", name: "Áo Sơ Mi Trắng", stock: 0, price: 250000 }, // SP01 đang hết hàng theo SQL [cite: 214]
+    { id: "SP02", name: "Quần Jean Nam Xanh", stock: 67, price: 550000 }
+];
 
-        /* Bảng hiển thị */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { background-color: #007bff; color: white; padding: 12px; text-align: left; }
-        td { padding: 12px; border-bottom: 1px solid #ddd; }
-        tr:hover { background-color: #f9f9f9; }
+let invoices = [
+    { id: "HD01", total: 400000, date: "2023-09-01" },
+    { id: "HD02", total: 550000, date: "2023-09-01" }
+];
 
-        /* Nút xóa */
-        .delete-btn { background-color: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
-        .delete-btn:hover { background-color: #c82333; }
-    </style>
-</head>
-<body>
+// 1. Hàm tính Tổng doanh thu (Chuyên sâu cho phần Kết luận báo cáo)
+function calculateTotalRevenue() {
+    return invoices.reduce((sum, inv) => sum + inv.total, 0);
+}
 
-<div class="container">
-    <h2>Hệ Thống Quản Lý Kho Quần Áo</h2>
-    
-    <div class="input-group">
-        <input type="text" id="name" placeholder="Tên sản phẩm (VD: Áo thu)">
-        <select id="type">
-            <option value="Áo">Áo</option>
-            <option value="Quần">Quần</option>
-            <option value="Váy">Váy</option>
-        </select>
-        <input type="text" id="price" placeholder="Giá bán (VNĐ)">
-        <input type="number" id="stock" placeholder="Số lượng tồn kho">
-        <button id="add-btn" onclick="addItem()">Thêm Sản Phẩm</button>
-    </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Tên sản phẩm</th>
-                <th>Loại</th>
-                <th>Giá (VNĐ)</th>
-                <th>Tồn kho</th>
-                <th>Thao tác</th>
-            </tr>
-        </thead>
-        <tbody id="product-list">
-            </tbody>
-    </table>
-</div>
-
-<script>
-    let products = [
-        { id: 1, name: "Sơ mi trắng Slimfit", type: "Áo", price: "250,000", stock: 50 },
-        { id: 2, name: "Quần Jean Denim", type: "Quần", price: "450,000", stock: 30 }
-    ];
-
-    function renderTable() {
-        const list = document.getElementById('product-list');
-        list.innerHTML = "";
-        products.forEach((item, index) => {
-            list.innerHTML += `
-                <tr>
-                    <td>${item.id}</td>
-                    <td>${item.name}</td>
-                    <td>${item.type}</td>
-                    <td>${item.price}</td>
-                    <td>${item.stock}</td>
-                    <td><button class="delete-btn" onclick="deleteItem(${index})">Xóa</button></td>
-                </tr>
-            `;
-        });
+// 2. Ràng buộc: Kiểm tra trước khi bán (Logic nghiệp vụ)
+function validateSale(productId, quantity) {
+    const product = products.find(p => p.id === productId);
+    if (product.stock < quantity) {
+        alert(`Không đủ hàng! ${product.name} chỉ còn ${product.stock} sản phẩm.`); // Theo quy tắc ràng buộc [cite: 18]
+        return false;
     }
+    return true;
+}
 
-    function addItem() {
-        const name = document.getElementById('name').value;
-        const type = document.getElementById('type').value;
-        const price = document.getElementById('price').value;
-        const stock = document.getElementById('stock').value;
+// 3. Tự động tính Thành tiền (Dựa trên CHITIET_HOADON) [cite: 48, 194]
+function updateLineTotal(price, quantity) {
+    return price * quantity;
+}
 
-        if (name && price && stock) {
-            const newId = products.length > 0 ? products[products.length - 1].id + 1 : 1;
-            products.push({ id: newId, name, type, price, stock });
-            renderTable();
-            // Xóa sạch ô nhập sau khi thêm
-            document.getElementById('name').value = "";
-            document.getElementById('price').value = "";
-            document.getElementById('stock').value = "";
-        } else {
-            alert("Vui lòng nhập đầy đủ thông tin!");
-        }
-    }
-
-    function deleteItem(index) {
-        if (confirm("Bạn có chắc muốn xóa sản phẩm này?")) {
-            products.splice(index, 1);
-            renderTable();
-        }
-    }
-
-    // Chạy lần đầu để hiện dữ liệu mẫu
-    renderTable();
-</script>
-
-</body>
-</html>
+// Hàm hiển thị Dashboard Thống kê
+function renderDashboard() {
+    const total = calculateTotalRevenue();
+    console.log("Tổng doanh thu hệ thống:", total.toLocaleString('vi-VN'), "VNĐ");
+    // Bạn có thể dùng dữ liệu này để vẽ biểu đồ bằng thư viện Chart.js
+}
