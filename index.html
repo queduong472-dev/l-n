@@ -2,46 +2,36 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Hệ Thống Quản Lý Cửa Hàng - BTLL Hoàn Chỉnh</title>
+    <title>Hệ Thống Quản Lý Cửa Hàng - Cloud Database Realtime</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #2c3e50; --accent: #3498db; --success: #27ae60; --danger: #e74c3c; --warning: #f39c12; }
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; display: flex; background: #f4f7f6; height: 100vh; }
         .sidebar { width: 260px; background: var(--primary); color: white; display: flex; flex-direction: column; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
-        .sidebar h2 { padding: 25px; text-align: center; background: #1a252f; margin: 0; font-size: 1.2em; text-transform: uppercase; letter-spacing: 1px; }
-        .nav-item { padding: 18px 25px; cursor: pointer; transition: 0.3s; border-left: 5px solid transparent; display: flex; align-items: center; gap: 10px; }
+        .sidebar h2 { padding: 25px; text-align: center; background: #1a252f; margin: 0; font-size: 1.1em; text-transform: uppercase; }
+        .nav-item { padding: 18px 25px; cursor: pointer; transition: 0.3s; border-left: 5px solid transparent; }
         .nav-item:hover, .nav-item.active { background: #34495e; border-left: 5px solid var(--accent); }
         .content { flex: 1; padding: 30px; overflow-y: auto; }
-        
-        /* Dashboard Thống kê */
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 25px; }
-        .stat-card { background: white; padding: 20px; border-radius: 12px; border-left: 5px solid var(--accent); box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .stat-card h3 { margin: 0; font-size: 0.9em; color: #7f8c8d; text-transform: uppercase; }
-        .stat-card p { margin: 10px 0 0 0; font-size: 1.8em; font-weight: bold; color: var(--primary); }
-
+        .stat-card { background: white; padding: 20px; border-radius: 12px; border-left: 5px solid var(--accent); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .stat-card h3 { margin: 0; font-size: 0.85em; color: #7f8c8d; text-transform: uppercase; }
+        .stat-card p { margin: 10px 0 0 0; font-size: 1.6em; font-weight: bold; color: var(--primary); }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        h1 { margin: 0 0 20px 0; color: #2c3e50; font-size: 1.5em; border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
-        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; }
+        .toolbar { display: flex; justify-content: space-between; gap: 15px; margin-bottom: 20px; }
         .search-box { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; outline: none; }
-        
-        .form-container { background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #eee; }
-        .input-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 15px; }
-        input, select { padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
-
-        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; }
+        .btn { padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; }
         .btn-add { background: var(--success); }
-        .btn-edit { background: var(--warning); padding: 5px 10px; font-size: 12px; margin-right: 5px; }
-        .btn-del { background: var(--danger); padding: 5px 10px; font-size: 12px; }
-        .btn-export { background: #607d8b; }
-
+        .btn-edit { background: var(--warning); font-size: 11px; padding: 5px 8px; margin-right: 3px; }
+        .btn-del { background: var(--danger); font-size: 11px; padding: 5px 8px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { background: #f8f9fa; color: var(--primary); padding: 15px; text-align: left; border-bottom: 2px solid #dee2e6; }
+        th { background: #f8f9fa; padding: 15px; text-align: left; border-bottom: 2px solid #dee2e6; color: var(--primary); }
         td { padding: 12px 15px; border-bottom: 1px solid #eee; font-size: 14px; }
     </style>
 </head>
 <body>
 
 <div class="sidebar">
-    <h2>Quản Lý Cửa Hàng 👔</h2>
+    <h2>QUẢN LÝ CỬA HÀNG 👔</h2>
     <div class="nav-item active" id="btn-sp" onclick="switchTab('sp')">📦 Sản Phẩm</div>
     <div class="nav-item" id="btn-nv" onclick="switchTab('nv')">👥 Nhân Viên</div>
     <div class="nav-item" id="btn-kh" onclick="switchTab('kh')">⭐ Khách Hàng</div>
@@ -50,111 +40,121 @@
 
 <div class="content">
     <div class="stats-grid">
-        <div class="stat-card" style="border-left-color: var(--success);"><h3>Tổng Doanh Thu</h3><p id="st-rev">0đ</p></div>
-        <div class="stat-card"><h3>Mặt Hàng Trong Kho</h3><p id="st-count">0</p></div>
-        <div class="stat-card" style="border-left-color: var(--danger);"><h3>Sản Phẩm Hết Hàng</h3><p id="st-out">0</p></div>
+        <div class="stat-card" style="border-left-color: var(--success);"><h3>Doanh Thu</h3><p id="st-rev">0đ</p></div>
+        <div class="stat-card"><h3>Số Mặt Hàng</h3><p id="st-count">0</p></div>
+        <div class="stat-card" style="border-left-color: var(--danger);"><h3>Hết Hàng</h3><p id="st-out">0</p></div>
     </div>
-
     <div class="card">
-        <h1 id="tab-title">Quản lý Sản Phẩm</h1>
+        <h1 id="tab-title" style="margin-top:0; font-size: 1.4em;">Quản lý Sản Phẩm</h1>
         <div class="toolbar">
             <input type="text" id="searchInput" class="search-box" placeholder="Tìm kiếm nhanh..." onkeyup="handleSearch()">
-            <button class="btn btn-export" onclick="exportCSV()">📊 Xuất File CSV</button>
+            <button class="btn" style="background:#607d8b" onclick="exportCSV()">📊 Xuất File CSV</button>
         </div>
-
-        <div class="form-container">
-            <div class="input-grid" id="input-fields"></div>
-            <button class="btn btn-add" id="sub-btn" onclick="handleSave()">Lưu Dữ Liệu</button>
+        <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:20px;">
+            <div id="fields" style="display:grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:10px;"></div>
+            <button class="btn btn-add" id="sub-btn" onclick="handleSave()">Lưu Lên Cloud</button>
         </div>
-
-        <table id="main-table">
-            <thead id="thead"></thead>
-            <tbody id="tbody"></tbody>
-        </table>
+        <table><thead id="thead"></thead><tbody id="tbody"></tbody></table>
     </div>
 </div>
 
 <script>
-    // Dữ liệu mẫu khớp 100% SQL của bạn [cite: 120-198]
-    const defaultData = {
-        sp: [
-            { id: "SP01", name: "Áo Sơ Mi Trắng", type: "Áo", buy: 150000, sell: 250000, stock: 0 },
-            { id: "SP02", name: "Quần Jean Nam Xanh", type: "Quần", buy: 300000, sell: 550000, stock: 67 }
-        ],
-        nv: [{ id: "NV01", name: "Nguyễn Văn Anh", role: "Quản lý", phone: "0901234567", mail: "annv@gmail.com" }],
-        kh: [{ id: "KH01", name: "Nguyễn Thị Mai", phone: "0321456789", addr: "Hà Nội", gender: "Nữ" }],
-        hd: [{ id: "HD01", date: "2023-09-01", total: 400000, staff: "NV02", customer: "KH01" }]
-    };
+    // ĐÃ THAY 2 LINK CỦA BẠN VÀO ĐÂY 
+    const SUPABASE_URL = 'https://krpklskksqtewvovymfw.supabase.co'; 
+    const SUPABASE_KEY = 'sb_publishable_N_7ieYpq2vEHM3Ylf48GLw_vmGm_YJW';
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let appData = JSON.parse(localStorage.getItem('storeDB_Final')) || defaultData;
-    let currentTab = 'sp', editIdx = -1;
+    let currentTab = 'sp', editId = null, allData = [];
 
-    function switchTab(tab) {
-        currentTab = tab; editIdx = -1;
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        document.getElementById('btn-' + tab).classList.add('active');
+    async function switchTab(tab) {
+        currentTab = tab; editId = null;
+        document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+        document.getElementById('btn-'+tab).classList.add('active');
         document.getElementById('tab-title').innerText = "Quản lý " + (tab==='sp'?'Sản Phẩm':tab==='nv'?'Nhân Viên':tab==='kh'?'Khách Hàng':'Hóa Đơn');
-        renderForm(); renderTable(); updateDashboard();
+        renderForm(); fetchData();
     }
 
-    function renderForm(editData = null) {
-        const grid = document.getElementById('input-fields');
-        const btn = document.getElementById('sub-btn');
-        btn.innerText = editIdx === -1 ? "Thêm Dữ Liệu Mới" : "Cập Nhật Thay Đổi";
+    function renderForm(data = null) {
+        const f = document.getElementById('fields');
         const cfg = {
-            sp: ["Mã SP", "Tên SP", "Loại", "Giá Nhập", "Giá Bán", "Tồn kho"],
-            nv: ["Mã NV", "Tên NV", "Chức vụ", "SĐT", "Email"],
-            kh: ["Mã KH", "Tên KH", "SĐT", "Địa chỉ", "Giới tính"],
-            hd: ["Mã HD", "Ngày tạo", "Tổng tiền", "Mã NV", "Mã KH"]
+            sp: ["MaSP", "TenSP", "LoaiSP", "GiaNhap", "GiaBan", "SoLuongTon"], [cite: 14, 157-166]
+            nv: ["MaNV", "TenNV", "ChucVu", "SDTNV"], [cite: 12, 127-137]
+            kh: ["MaKH", "TenKH", "SDTKH", "DiaChi"], [cite: 15, 139-148]
+            hd: ["MaHD", "NgayTao", "ThanhTien", "MaNV", "MaKH"] [cite: 16, 168-177]
         };
-        grid.innerHTML = cfg[currentTab].map((l, i) => `<input id="f${i}" placeholder="${l}" value="${editData?Object.values(editData)[i]:''}">`).join('');
+        f.innerHTML = cfg[currentTab].map((l,i) => `<input id="f${i}" placeholder="${l}" value="${data?Object.values(data)[i]:''}">`).join('');
     }
 
-    function renderTable(filterData = null) {
-        const head = document.getElementById('thead'), body = document.getElementById('tbody'), list = filterData || appData[currentTab];
-        let h = (currentTab==='sp') ? ["Mã", "Tên", "Loại", "Nhập", "Bán", "Tồn", "Lệnh"] : (currentTab==='nv') ? ["Mã", "Tên", "Chức vụ", "SĐT", "Email", "Lệnh"] : (currentTab==='kh') ? ["Mã", "Tên", "SĐT", "Địa chỉ", "Phái", "Lệnh"] : ["Mã HD", "Ngày", "Tổng", "NV", "KH", "Lệnh"];
-        head.innerHTML = `<tr>${h.map(t => `<th>${t}</th>`).join('')}</tr>`;
-        body.innerHTML = list.map((item, idx) => `<tr>${Object.values(item).map(v => `<td>${v.toLocaleString()}</td>`).join('')}<td><button class="btn btn-edit" onclick="startEdit(${idx})">Sửa</button><button class="btn btn-del" onclick="handleDelete(${idx})">Xóa</button></td></tr>`).join('');
+    async function fetchData() {
+        const tableMap = {sp:'SANPHAM', nv:'NHANVIEN', kh:'KHACHHANG', hd:'HOADON'}; [cite: 55-64]
+        const { data, error } = await supabase.from(tableMap[currentTab]).select('*');
+        if (error) console.error(error);
+        else { allData = data; renderTable(data); updateStats(); }
     }
 
-    function handleSave() {
-        const inputs = document.querySelectorAll('#input-fields input');
-        let newItem = {}; const keys = Object.keys(appData[currentTab][0]);
-        keys.forEach((k, i) => {
-            const val = inputs[i].value;
-            newItem[k] = (k==='buy' || k==='sell' || k==='stock' || k==='total') ? Number(val.replace(/,/g, '')) : val;
+    function renderTable(list) {
+        const h = document.getElementById('thead'), b = document.getElementById('tbody');
+        let heads = (currentTab==='sp') ? ["Mã", "Tên", "Loại", "Nhập", "Bán", "Tồn", "Lệnh"] : ["ID", "Tên/Ngày", "Thông tin 1", "Thông tin 2", "Lệnh"];
+        h.innerHTML = `<tr>${heads.map(x => `<th>${x}</th>`).join('')}</tr>`;
+        b.innerHTML = list.map(item => `<tr>${Object.values(item).map(v => `<td>${v}</td>`).join('')}<td><button class="btn btn-edit" onclick="startEdit('${Object.values(item)[0]}')">Sửa</button><button class="btn btn-del" onclick="handleDelete('${Object.values(item)[0]}')">Xóa</button></td></tr>`).join('');
+    }
+
+    async function handleSave() {
+        const tableMap = {sp:'SANPHAM', nv:'NHANVIEN', kh:'KHACHHANG', hd:'HOADON'};
+        const fields = document.querySelectorAll('#fields input');
+        let obj = {};
+        const configKeys = {
+            sp: ['MaSP', 'TenSP', 'LoaiSP', 'GiaNhap', 'GiaBan', 'SoLuongTon'],
+            nv: ['MaNV', 'TenNV', 'ChucVu', 'SDTNV'],
+            kh: ['MaKH', 'TenKH', 'SDTKH', 'DiaChi'],
+            hd: ['MaHD', 'NgayTao', 'ThanhTien', 'MaNV', 'MaKH']
+        };
+        
+        configKeys[currentTab].forEach((k, i) => {
+            let val = fields[i].value;
+            obj[k] = (k.includes('Gia') || k.includes('Ton') || k.includes('Tien')) ? Number(val) : val;
         });
-        if (editIdx === -1) appData[currentTab].push(newItem);
-        else appData[currentTab][editIdx] = newItem;
-        localStorage.setItem('storeDB_Final', JSON.stringify(appData));
-        editIdx = -1; renderForm(); renderTable(); updateDashboard();
+
+        if (!editId) await supabase.from(tableMap[currentTab]).insert([obj]); [cite: 115-208]
+        else await supabase.from(tableMap[currentTab]).update(obj).eq(configKeys[currentTab][0], editId);
+        
+        alert("Dữ liệu đã đồng bộ lên Cloud!"); switchTab(currentTab);
     }
 
-    function startEdit(idx) { editIdx = idx; renderForm(appData[currentTab][idx]); window.scrollTo({top: 0, behavior: 'smooth'}); }
-    
-    function handleDelete(idx) {
-        if(confirm("Xác nhận xóa?")) { appData[currentTab].splice(idx, 1); localStorage.setItem('storeDB_Final', JSON.stringify(appData)); renderTable(); updateDashboard(); }
+    async function handleDelete(id) {
+        if(confirm("Xóa vĩnh viễn trên Database?")) {
+            const tableMap = {sp:'SANPHAM', nv:'NHANVIEN', kh:'KHACHHANG', hd:'HOADON'};
+            const idKey = (currentTab==='sp')?'MaSP':(currentTab==='nv')?'MaNV':'MaKH';
+            await supabase.from(tableMap[currentTab]).delete().eq(idKey, id);
+            fetchData();
+        }
+    }
+
+    function startEdit(id) {
+        editId = id; const data = allData.find(i => Object.values(i)[0] == id);
+        renderForm(data); window.scrollTo(0,0);
+    }
+
+    async function updateStats() {
+        const { data: hdData } = await supabase.from('HOADON').select('ThanhTien'); [cite: 168-177]
+        const { data: spData } = await supabase.from('SANPHAM').select('SoLuongTon'); [cite: 157-166]
+        const rev = (hdData || []).reduce((s,i) => s + Number(i.ThanhTien||0), 0); [cite: 287-290]
+        document.getElementById('st-rev').innerText = rev.toLocaleString() + "đ";
+        document.getElementById('st-count').innerText = (spData || []).length;
+        document.getElementById('st-out').innerText = (spData || []).filter(s => Number(s.SoLuongTon) === 0).length; [cite: 291-296]
     }
 
     function handleSearch() {
-        const q = document.getElementById('searchInput').value.toLowerCase();
-        const res = appData[currentTab].filter(i => Object.values(i).some(v => v.toString().toLowerCase().includes(q)));
-        renderTable(res);
-    }
-
-    function updateDashboard() {
-        // TÍNH DOANH THU ĐỘNG TỪ BẢNG HÓA ĐƠN 
-        const revenue = appData.hd.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
-        document.getElementById('st-rev').innerText = revenue.toLocaleString() + "đ";
-        document.getElementById('st-count').innerText = appData.sp.length;
-        document.getElementById('st-out').innerText = appData.sp.filter(s => Number(s.stock) === 0).length;
+        const q = document.getElementById('searchInput').value.toLowerCase(); [cite: 222-227]
+        renderTable(allData.filter(i => Object.values(i).some(v => v.toString().toLowerCase().includes(q))));
     }
 
     function exportCSV() {
-        let rows = [Object.keys(appData[currentTab][0]).join(",")];
-        appData[currentTab].forEach(obj => rows.push(Object.values(obj).join(",")));
-        const blob = new Blob(["\ufeff" + rows.join("\n")], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `BaoCao_${currentTab}.csv`; link.click();
+        if(allData.length === 0) return;
+        let r = [Object.keys(allData[0]).join(",")];
+        allData.forEach(o => r.push(Object.values(o).join(",")));
+        const b = new Blob(["\ufeff"+r.join("\n")], {type:'text/csv'});
+        const a = document.createElement("a"); a.href=URL.createObjectURL(b); a.download=`${currentTab}.csv`; a.click();
     }
 
     switchTab('sp');
